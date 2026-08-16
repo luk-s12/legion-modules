@@ -1,11 +1,16 @@
+<p align="center">
+  <img src="assets/legion-modules-l-wordmark.png" alt="LEGION MODULES" width="360">
+</p>
+
 <p align="center"><strong>English</strong> · <a href="README.es.md">Español</a></p>
 
 # Legion Modules — official module collection for Legion
 
-This repo is a **monorepo of modules for [Legion](https://github.com/luk-s12/legion)**, the
-dynamic multi-agent orchestration system. A **module** is a self-contained Claude Code project —
-one agent, optionally with skills — that plugs into a Legion orchestration to either verify a
-User Story (`type: gate`) or produce a standalone artifact from a base repo (`type: generator`),
+<img src="assets/legion-modules-l-mark.png" alt="L" width="18" align="absmiddle"> **EGION MODULES**
+is a **monorepo of modules for [Legion](https://github.com/luk-s12/legion)**, the dynamic
+multi-agent orchestration system. A **module** is a self-contained Claude Code project — one
+agent, optionally with skills — that plugs into a Legion orchestration to either verify a User
+Story (`type: gate`) or produce a standalone artifact from a base repo (`type: generator`),
 without Legion ever having to own or edit that code. Legion treats every module the same way it
 treats the destination project itself: it clones it, reads it, and never touches it by hand.
 

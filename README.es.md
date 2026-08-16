@@ -1,14 +1,18 @@
+<p align="center">
+  <img src="assets/legion-modules-l-wordmark.png" alt="LEGION MODULES" width="360">
+</p>
+
 <p align="center"><a href="README.md">English</a> · <strong>Español</strong></p>
 
 # Legion Modules — colección oficial de módulos para Legion
 
-Este repo es un **monorepo de módulos para [Legion](https://github.com/luk-s12/legion)**, el
-sistema de orquestación multiagente dinámico. Un **módulo** es un proyecto de Claude Code
-autocontenido — un agente, opcionalmente con skills — que se conecta a una orquestación de Legion
-para verificar una historia de usuario (`type: gate`) o producir un artefacto standalone a partir
-de un repo base (`type: generator`), sin que Legion tenga que ser dueño de ese código ni editarlo.
-Legion trata a cada módulo igual que trata al propio proyecto destino: lo clona, lo lee, y nunca
-lo toca a mano.
+<img src="assets/legion-modules-l-mark.png" alt="L" width="18" align="absmiddle"> **EGION MODULES**
+es un **monorepo de módulos para [Legion](https://github.com/luk-s12/legion)**, el sistema de
+orquestación multiagente dinámico. Un **módulo** es un proyecto de Claude Code autocontenido — un
+agente, opcionalmente con skills — que se conecta a una orquestación de Legion para verificar una
+historia de usuario (`type: gate`) o producir un artefacto standalone a partir de un repo base
+(`type: generator`), sin que Legion tenga que ser dueño de ese código ni editarlo. Legion trata a
+cada módulo igual que trata al propio proyecto destino: lo clona, lo lee, y nunca lo toca a mano.
 
 Cada módulo vive en su **propia carpeta de primer nivel** dentro de este repo (ej. `dummy-e2e/`,
 `api-collections/`) — independiente de las demás, instalable por separado. No hay runtime
