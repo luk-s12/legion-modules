@@ -10,9 +10,11 @@
 es un **monorepo de módulos para [Legion](https://github.com/luk-s12/legion)**, el sistema de
 orquestación multiagente dinámico. Un **módulo** es un proyecto de Claude Code autocontenido — un
 agente, opcionalmente con skills — que se conecta a una orquestación de Legion para verificar una
-historia de usuario (`type: gate`) o producir un artefacto standalone a partir de un repo base
-(`type: generator`), sin que Legion tenga que ser dueño de ese código ni editarlo. Legion trata a
-cada módulo igual que trata al propio proyecto destino: lo clona, lo lee, y nunca lo toca a mano.
+historia de usuario (`type: gate`), producir un artefacto standalone a partir de un repo base
+(`type: generator`), o escribir código directo en el worktree de una historia como su autor
+(`type: implementer`), sin que Legion tenga que ser dueño de ese código ni editarlo. Legion trata
+a cada módulo igual que trata al propio proyecto destino: lo clona, lo lee, y nunca lo toca a
+mano.
 
 Cada módulo vive en su **propia carpeta de primer nivel** dentro de este repo (ej. `dummy-e2e/`,
 `api-collections/`) — independiente de las demás, instalable por separado. No hay runtime
@@ -24,6 +26,8 @@ compartido entre módulos: instalar uno nunca requiere instalar otro.
 - [Estructura del repo](#estructura-del-repo)
 - [Tipos de módulo](#tipos-de-módulo)
 - [El manifiesto `module.md`](#el-manifiesto-modulemd)
+- [Skills y rules que trae un módulo](#skills-y-rules-que-trae-un-módulo-provides_skillsprovides_rules)
+- [`type: implementer`](#type-implementer--un-módulo-que-escribe-código)
 - [Crear un módulo nuevo](#crear-un-módulo-nuevo)
 - [Autoconfig: instalar directo desde el template](#autoconfig-instalar-directo-desde-el-template)
 - [Probar un módulo contra una instancia real de Legion](#probar-un-módulo-contra-una-instancia-real-de-legion)
@@ -42,13 +46,13 @@ aislamiento que un `worktree-agent`:
   subpath declarado de ese worktree).
 - Un módulo `type: generator` solo escribe dentro de su carpeta `output` declarada — nunca dentro
   del repo base ni de un worktree que esté leyendo.
-- Ninguno de los dos se comunica con otro worktree, otro módulo, ni escribe directamente en
+- Un módulo `type: implementer` tiene `Write`/`Edit` real sobre el worktree **entero** de la
+  historia que lo nombró — el permiso más amplio que da cualquier módulo, y solo porque una
+  historia lo pidió explícito (`## Subtasks: [implementer:<name>]`), nunca elegido de forma
+  automática ni activado por default en todas las historias.
+- Ninguno de los tres se comunica con otro worktree, otro módulo, ni escribe directamente en
   `.orchestrator/signals/`/`.orchestrator/announcements/` — los hallazgos van a
   `modules/reports/`, y solo el orquestador de Legion decide si algo se escala.
-
-`type: implementer` (un módulo que escribe código de producción, como un especialista de dominio)
-**no tiene contrato implementado todavía** — no construyas uno; hoy no hay nada en Legion que lo
-instale ni lo lance.
 
 ## Estructura del repo
 
@@ -76,7 +80,7 @@ Definidos y aplicados por el propio `modules/README.md` de Legion — este repo 
 |---|---|---|---|
 | `gate` | En un `valid_stages` de la historia (ej. `post-finalized`), opt-in vía `## Modules` de la historia o `default_activation: always` | Sí, si `blocking: true` (misma autoridad que el revisor adversario para ese hallazgo — nunca lo reemplaza) | `writes_to`, un subpath del worktree de la historia |
 | `generator` | Bajo demanda, vía `/run-module <name>` — completamente fuera del ciclo de historias | No — nunca produce un veredicto | `output`, namespaced automáticamente por proyecto destino |
-| `implementer` | — | — | No soportado todavía, sin contrato definido |
+| `implementer` | Solo cuando una historia lo nombra explícito (`## Subtasks: [implementer:<name>]`) — nunca autoseleccionado, `default_activation: always` se rechaza directo para este `type` | No tiene veredicto propio — su código pasa por el mismo gate de diseño y `worktree-reviewer` que cualquier implementador | El worktree **entero** de la historia que lo nombró — sin `writes_to` que lo acote |
 
 Un módulo `gate` nunca se convierte en la única puerta a `finalized` — el `worktree-reviewer` de
 Legion siempre tiene la última palabra, incluso cuando un módulo `gate` es `blocking: true`.
@@ -87,7 +91,7 @@ Frontmatter YAML, `snake_case`, un comentario por campo — misma convención qu
 `.orchestrator/config.md`. Los campos obligatorios dependen del `type`:
 
 - **Siempre**:
-  - `type` — `gate` | `generator` (`implementer` no soportado todavía).
+  - `type` — `gate` | `generator` | `implementer`.
   - `tools` — lista YAML de tools declaradas (`Read`, `Grep`, `Glob`, `Bash`, `Write`, `Edit`;
     cualquier otra queda marcada como riesgo desconocido en el preview de `/new-module`).
   - `agent_entrypoint` — path relativo, dentro de la propia carpeta del módulo, al agente que
@@ -101,18 +105,27 @@ Frontmatter YAML, `snake_case`, un comentario por campo — misma convención qu
     existir siempre, aunque su valor esté vacío.
   - `blocking` — `true` | `false`.
   - Opcionales: `max_rejection_rounds` (entero), `max_concurrent` (entero), `requires_local_config`
-    (`true` | `false`).
+    (`true` | `false`), `provides_skills` (lista de paths), `provides_rules` (path) — ver
+    [Skills y rules que trae un módulo](#skills-y-rules-que-trae-un-módulo-provides_skillsprovides_rules).
 - **`type: generator`**, además:
   - `output` — path con la forma `modules/output/<module-name>/<base-repo-name>/`
     (el segmento `<base-repo-name>` lo completa Legion automáticamente).
   - `scope` — `base-repo` | `worktree`.
-  - Ninguno de los campos exclusivos de `gate` aplica.
+  - Ninguno de los campos exclusivos de `gate` aplica — esto incluye `provides_skills`/
+    `provides_rules`: un `generator` nunca entra al ciclo de la historia, así que no hay quién
+    los consuma. `/new-module` los rechaza directo en este `type`.
+- **`type: implementer`**, sin campos adicionales obligatorios; opcionalmente `provides_skills`/
+  `provides_rules` (mismo formato que `gate`). `writes_to`, `blocking`, `valid_stages`/
+  `default_stage`, `max_rejection_rounds`, `max_concurrent` **no** aplican — `/new-module`
+  rechaza cualquiera de esos si está presente. `default_activation` solo puede ser `opt-in` en
+  este `type` (`always` se rechaza directo) — ver
+  [`type: implementer`](#type-implementer--un-módulo-que-escribe-código).
 
 ### Ejemplo `type: gate`
 
 ```yaml
 ---
-type: gate                                # gate | generator (implementer: no soportado todavía)
+type: gate                                # gate | generator | implementer
 valid_stages:                             # etapas que este módulo soporta técnicamente (una o más)
   - post-finalized
 default_stage: post-finalized             # se usa cuando la historia no especifica etapa
@@ -129,10 +142,53 @@ max_rejection_rounds: 3                   # nunca más laxo que max_correction_r
 max_concurrent: 1                         # default, si se omite: 1 si writes_to no está vacío, ilimitado si está vacío
 requires_local_config: true               # si es true, /new-module chequea .env.<base-repo>.local (solo existencia)
 blocking: true                            # true = puede REJECTED como el revisor; false = va al ADVISORY del revisor
+provides_skills:                          # opcional — paths dentro del propio clone del módulo, formato SKILL.md
+  - skills/oop-practices/SKILL.md
+provides_rules: rules.md                  # opcional — path dentro del propio clone del módulo, itemizado con rule_id
 ---
 
 # Module: e2e-runner
 ```
+
+## Skills y rules que trae un módulo (`provides_skills`/`provides_rules`)
+
+Un módulo `type: gate` o `type: implementer` puede, además de su función principal, aportar
+contenido que el agente implementador lee directo — **solo para la historia que referencia al
+módulo**, nunca fusionado a las convenciones propias del proyecto donde se instala, nunca
+aplicado a una historia que no lo pida.
+
+- **`provides_skills`** — guía procedimental (una checklist, un how-to), en el mismo formato que
+  `.claude/skills/<name>/SKILL.md`. El agente implementador la lee completa, con la misma
+  autoridad que el `QUALITY_GUIDE` propio de Legion.
+- **`provides_rules`** — enunciados puntuales tipo regla que SÍ pueden contradecir una regla real
+  del proyecto donde se instala, así que Legion los negocia explícito con el usuario la primera
+  vez que una historia de ese proyecto referencia al módulo — **una sola vez por proyecto**,
+  nunca al momento de instalar con `/new-module` (un módulo de este repo es una librería
+  reutilizable contra muchos proyectos distintos a lo largo del tiempo, así que el momento de
+  instalar es demasiado temprano para saber contra qué reglas de qué proyecto se va a chequear).
+  Lo aceptado termina embebido como texto real en el diseño de esa historia, nunca fusionado a
+  las reglas propias del proyecto que lo instaló.
+
+Cada path de `provides_skills` y el propio path de `provides_rules` deben resolver a un archivo
+real dentro de la carpeta del módulo — `/new-module` rechaza el manifiesto directo si alguno no
+existe.
+
+### Formato de `rules.md` (a qué apunta `provides_rules`)
+
+Una entrada por regla, cada una con un **`rule_id` estable** que vos definís (Legion nunca
+inventa uno) más su enunciado:
+
+```md
+### no-mutable-public-fields
+Los campos públicos nunca deben ser mutables — exponé un getter y un método
+setter/mutador dedicado en vez de un campo público directo.
+
+### max-function-length
+Una función de más de 40 líneas debe partirse — extraé helpers nombrados por cada paso lógico.
+```
+
+`rule_id` debe ser único dentro del archivo — `/new-module` rechaza un `rules.md` con duplicados
+o con una entrada sin `rule_id`.
 
 ### Ejemplo `type: generator`
 
@@ -152,6 +208,51 @@ agent_entrypoint: .claude/agents/api-collection-generator.md
 # Module: api-collections
 ```
 
+### Ejemplo `type: implementer`
+
+```yaml
+---
+type: implementer
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Write
+  - Edit
+agent_entrypoint: .claude/agents/code-quality-writer.md
+provides_skills:                          # opcional — mismo formato que gate
+  - skills/oop-practices/SKILL.md
+provides_rules: rules.md                  # opcional — mismo formato que gate
+---
+
+# Module: code-quality-pro
+```
+
+## `type: implementer` — un módulo que escribe código
+
+A diferencia de `gate` (verifica, puede rechazar) y `generator` (produce un artefacto
+standalone), el agente de un módulo `type: implementer` **escribe código directo en el worktree
+de una historia**, como su autor — el mismo rol que juega un implementador nativo de Legion, pero
+con origen en tu clone.
+
+- **Sin `writes_to`** — no hay una zona más chica que ofrecer que el worktree entero, así que
+  este `type` no declara ninguna. Legion verifica el aislamiento al revés: un chequeo duro de
+  `git status` contra el repo base y contra cualquier otro worktree *inactivo* (cualquier
+  diferencia ahí es un incidente), y un cruce best-effort contra los eventos propios de la
+  historia hermana para cualquier worktree *activo en paralelo* — un diff plano no puede
+  distinguir "el módulo se escapó de su worktree" de "una historia en paralelo simplemente
+  avanzó", así que ese caso nunca se marca automático, solo queda registrado para revisión
+  manual.
+- **Nunca autoseleccionado** — solo corre porque una historia lo nombra explícito:
+  `## Subtasks: 1. [implementer:<module-name>] <descripción>`. `default_activation: always` se
+  rechaza a propósito al instalar este `type`: un módulo de terceros con acceso de escritura real
+  nunca reemplaza al implementador nativo en silencio, en todas las historias.
+- **Mismo gate de diseño, sin atajos** — tu agente propone su propio diseño para su subtask y
+  pasa por la misma barrera que cualquier otro implementador.
+- **Revisor, sin cambios** — `worktree-reviewer` audita tu código exactamente igual que
+  cualquier otro, contra el diseño aprobado (que ya tiene resuelto cualquier conflicto de
+  `provides_rules`).
+
 ## Crear un módulo nuevo
 
 **Arrancá desde [`_template/`](_template/)** — por ahora trae solo
@@ -168,9 +269,11 @@ cp _template/module.md mi-modulo/module.md
 ```
 
 1. **Elegí el tipo** — `gate` si el módulo tiene que poder verificar (y eventualmente rechazar)
-   una historia; `generator` si solo lee código y produce un artefacto standalone, sin veredicto.
-   Si lo que tenés en mente escribe código de producción, frená: eso es `implementer`, no
-   soportado.
+   una historia; `generator` si solo lee código y produce un artefacto standalone, sin veredicto;
+   `implementer` si tiene que escribir código directo en el worktree de una historia, como su
+   autor (ver [`type: implementer`](#type-implementer--un-módulo-que-escribe-código) — acceso
+   real de `Write`/`Edit` sobre un worktree entero, solo corre cuando una historia lo nombra
+   explícito).
 2. **Creá la carpeta** `<module-name>/` en la raíz de este repo (o copiá `_template/module.md`
    ahí adentro como se muestra arriba).
 3. **Escribí `module.md`** siguiendo el formato de arriba — todos los campos obligatorios para el
@@ -246,7 +349,15 @@ Legion — releer el manifiesto no es una prueba.
    con `worktree:<Story-ID>` contra una historia `finalized`. Confirmá que el artefacto cae bajo
    `modules/output/<module-name>/<base-repo-name>/` y que `workspace/<base-repo>` (o el worktree)
    sale de la corrida sin cambios inesperados (`git status --porcelain` antes y después).
-5. Una vez que se comporta como se espera, está listo para proponerse como inclusión en este
+5. **Para `type: implementer`**: escribí una historia con `## Subtasks: 1.
+   [implementer:<module-name>] <descripción>` y corré `/legion` sobre ella. Confirmá que el
+   `DESIGN_PROPOSED` de tu agente pasa por el mismo gate que cualquier implementador, que solo
+   toca su propio worktree asignado, y que `worktree-reviewer` audita su código igual que
+   cualquier otro.
+6. Si declaraste `provides_rules`, confirmá que la primera historia que referencia al módulo
+   contra un proyecto dado dispara la negociación única (`AskUserQuestion`), y que una segunda
+   historia del mismo proyecto no vuelve a preguntar.
+7. Una vez que se comporta como se espera, está listo para proponerse como inclusión en este
    repo.
 
 ## Modelo de confianza
@@ -265,7 +376,10 @@ módulos de este repo. Un preview de riesgo limpio no es garantía de seguridad,
 
 Construir un módulo para este repo significa escribirlo de forma que sus `tools`/`writes_to`/
 `output` declarados sean el alcance *real* completo de lo que necesita — no el mínimo que pasa la
-revisión.
+revisión. `type: implementer` es el permiso más amplio de los tres (`Write`/`Edit` sobre un
+worktree entero, sin `writes_to` que lo acote) — sostenelo con el mismo estándar: el gate de
+diseño y `worktree-reviewer` son la defensa real, igual que para cualquier implementador, nativo
+o no.
 
 ## Ciclo de vida una vez instalado
 
@@ -273,10 +387,13 @@ Una vez que un módulo de este repo está instalado en una instancia de Legion, 
 administra por completo esa instancia, no este repo:
 
 - `/module uninstall <name>` / `/module activate <name>` — deprecarlo, reactivarlo, o borrarlo.
+- `/module renegotiate <name> [rule_id]` — reabre un veredicto de `provides_rules` para el
+  proyecto actual, sin esperar a un cambio de versión.
 - Antes de cada lanzamiento corre automáticamente un chequeo de versión/contrato (`git fetch`
   sobre el clone instalado); si `tools`/`writes_to`/`output`/`type` cambiaron upstream (es decir,
   en este repo), la instancia que lo instaló vuelve a correr el flujo completo de preview de
-  riesgo antes de dejar correr el código actualizado.
+  riesgo antes de dejar correr el código actualizado. Si `rules.md` cambió, solo se renegocian
+  por proyecto los `rule_id` nuevos o reformulados — el resto mantiene su veredicto existente.
 
 Eso significa que un cambio acá — endurecer `tools`, agregar un campo, corregir un bug del
 agente — lo toma de forma segura cada instancia de Legion que tenga el módulo instalado, sin
