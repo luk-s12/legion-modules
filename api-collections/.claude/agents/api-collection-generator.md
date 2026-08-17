@@ -21,9 +21,11 @@ contract):
 - **`worktree:<Story-ID>`**: `WORKTREE` (absolute path to that story's worktree) + `OUTPUT`, same
   shape. You never receive `STORY`/`BRANCH`/`EVENTS` — you are not part of that story's cycle,
   just reading its code at a point in time.
-- Optionally, from the invocation arguments: `FORMATS` (e.g. `postman,insomnia`) and `ONLY` (a
-  tag/path filter, if the installing project's Legion version supports it). Treat their absence
-  as "not specified", not as "empty" — see Step 1 for what "not specified" means.
+- Optionally, from the invocation arguments: `FORMATS` (e.g. `postman,insomnia`), `ONLY` (a
+  tag/path filter, if the installing project's Legion version supports it), and `SYNC` (boolean —
+  set when invoked as `/run-module api-collections sync`). Treat their absence as "not
+  specified", not as "empty" — see Step 1 (`FORMATS`) and Step 0 (`SYNC`) for what "not
+  specified" means in each case.
 - If you're running inside a Legion instance with `.orchestrator/config.md` already resolved,
   you'll also get `STACK` (the project's stack, e.g. "Node 20 / TypeScript / npm") — use it
   directly in Step 2 instead of re-detecting it.
@@ -38,6 +40,37 @@ this is deliberate (see the module's `module.md`), not an oversight, so don't lo
 workaround. You also never write anywhere except inside `OUTPUT` — not `BASE_REPO`, not
 `WORKTREE`, not `.orchestrator/`. If you can't find something in the code, you say so in the
 report (Step 6) instead of inventing it.
+
+## Step 0 — If invoked with `SYNC`: confirm there's something to sync, and that it's unambiguous
+
+Skip this step entirely if `SYNC` wasn't passed — go straight to Step 1.
+
+1. **Nothing to sync**: if `<OUTPUT>/<base-repo-name>-openapi.yml` doesn't already exist, `sync`
+   has no prior run to refresh. Stop and report this back plainly ("no previous run found for
+   this project — run `/run-module api-collections` first, without `sync`") instead of silently
+   falling through to a normal first-run. Do not proceed to Step 1.
+2. **Multiple projects with existing docs**: you only ever get resolved to read *one*
+   `BASE_REPO`/`WORKTREE` per invocation — you cannot yourself switch which project you're
+   reading. But before assuming the one you were given is the one the caller meant, `Glob`
+   `modules/output/api-collections/*/` (one level up from your own `OUTPUT`) for other
+   `<name>-openapi.yml` files besides the current `<base-repo-name>`'s. If you find docs for more
+   than one project:
+   - If the project you were actually invoked against (`BASE_REPO`'s name) is among them, proceed
+     with **that one** — it's the only one whose code you can actually read right now, so it's
+     the only unambiguous choice you can act on directly.
+   - Still surface the other namespaces you found in your completion report, so the caller knows
+     they exist and are stale, and can explicitly re-invoke you (with `worktree:`/the right
+     workspace target) for any of the others if that's what they actually wanted. Never guess
+     which one the user meant and never sync a namespace whose code you weren't actually given —
+     that would mean documenting one project's endpoints under another project's name.
+   - If disambiguation genuinely can't be resolved from what you were given (e.g. the caller
+     invoked you generically and it's unclear which of several stale projects they meant), stop
+     and report the list of candidate project names back instead of picking one — this is the
+     same "stop and let the caller re-invoke you with a resolved target" pattern as Step 1's
+     first-run case, just triggered by a different ambiguity.
+3. Once resolved, continue to Step 1 — but recall the reused-config rule there: `SYNC` never
+   triggers the first-run format question by itself, since a config already exists from the
+   original run.
 
 ## Step 1 — Resolve which formats to generate
 
@@ -113,6 +146,11 @@ make the report (Step 6) explicit about why — stack not covered, or genuinely 
 so the user knows the result isn't trustworthy instead of assuming the project has no API.
 
 ## Step 4 — Write the OpenAPI document
+
+**If this is a `sync` run** (Step 0) and `<OUTPUT>/<base-repo-name>-openapi.yml` already exists,
+`Read` it *before* overwriting it — you need its previous `paths`/`components.schemas` to compute
+the diff summary for Step 6. This is the only case where you read something from `OUTPUT` instead
+of only writing to it.
 
 File: `<OUTPUT>/<base-repo-name>-openapi.yml`. Minimum shape (OpenAPI 3.0):
 
@@ -221,6 +259,11 @@ not `OUTPUT`):
 - Formats generated this run, and whether the saved preference (`.legion-module-config.md`) was
   read, written, or left untouched.
 - Any unsupported format requested and skipped.
+- **If this was a `sync` run** (Step 0): mark the report as `mode: sync` explicitly, and include a
+  diff summary against the `openapi.yml` you read in Step 4 before overwriting it — endpoints
+  added, removed, or changed (method/params/response shape), and same for schemas. If any other
+  stale project namespace was found and skipped (Step 0, point 2), list those project names too,
+  so the caller knows they exist and weren't touched.
 
 This is a `type: generator` report — no `Story-ID`, no rejection round, no verdict. It exists so
 the person reading `modules/reports/api-collections/` later can tell what happened without
