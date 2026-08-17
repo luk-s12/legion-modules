@@ -294,8 +294,12 @@ cp _meta/template/module.md mi-modulo/module.md
    últimos).
 5. **Sumá skills si el agente necesita una checklist o guía de referencia** para aplicar de forma
    consistente (`.claude/skills/<name>/SKILL.md`) — mismo patrón que usa el propio Legion con
-   `security-guide`/`data-guide` junto a sus agentes especialistas. Opcional, no todo módulo lo
-   necesita.
+   `security-guide`/`data-guide` junto a sus agentes especialistas. Mantené el entrypoint enfocado
+   en su contrato y el ruteo, e indicá exactamente cuándo debe leer cada skill; una skill
+   condicional no debe cargarse en corridas que no la necesitan. `api-collections` es el ejemplo
+   de referencia: OpenAPI se carga siempre, mientras Postman, Insomnia y sync se cargan solo
+   cuando corresponden. Estas skills internas no van en `provides_skills`, que inyecta guía al
+   agente implementador de una story. Es opcional, no todo módulo necesita skills.
 6. **Mantené el perfil de riesgo tan bajo como el trabajo lo permita.** `tools` fuera de
    `Read, Grep, Glob, Bash, Write, Edit` queda marcado como desconocido por el escaneo de
    `/new-module`; `Bash` en particular implica que el módulo puede leer cualquier cosa que el

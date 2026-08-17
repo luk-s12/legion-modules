@@ -283,8 +283,12 @@ cp _meta/template/module.md my-module/module.md
    `generator` invoked without `worktree:` gets neither).
 5. **Add skills, if the agent needs a checklist or reference guide** to apply consistently
    (`.claude/skills/<name>/SKILL.md`) — same pattern Legion itself uses for
-   `security-guide`/`data-guide` alongside its own specialist agents. Optional, not every module
-   needs one.
+   `security-guide`/`data-guide` alongside its own specialist agents. Keep the entrypoint focused
+   on its contract and routing, and state exactly when each skill must be read; conditional skills
+   should not load in runs that do not need them. `api-collections` is the reference example:
+   OpenAPI guidance always loads, while Postman, Insomnia, and sync load only when selected.
+   These internal skills do not belong in `provides_skills`, which injects guidance into a
+   story's implementing agent. Optional, not every module needs skills.
 6. **Keep the risk profile as low as the job allows.** `tools` outside
    `Read, Grep, Glob, Bash, Write, Edit` gets flagged as unknown by `/new-module`'s scan; `Bash`
    in particular means the module can read anything the host process can reach, regardless of
