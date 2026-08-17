@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="assets/legion-modules-l-wordmark.png" alt="LEGION MODULES" width="360">
+  <img src="_meta/assets/legion-modules-l-wordmark.png" alt="LEGION MODULES" width="360">
 </p>
 
 <p align="center"><strong>English</strong> · <a href="README.es.md">Español</a></p>
 
 # Legion Modules — official module collection for Legion
 
-<img src="assets/legion-modules-l-mark.png" alt="L" width="18" align="absmiddle"> **EGION MODULES**
+<img src="_meta/assets/legion-modules-l-mark.png" alt="L" width="18" align="absmiddle"> **EGION MODULES**
 is a **monorepo of modules for [Legion](https://github.com/luk-s12/legion)**, the dynamic
 multi-agent orchestration system. A **module** is a self-contained Claude Code project — one
 agent, optionally with skills — that plugs into a Legion orchestration to verify a User Story
@@ -59,8 +59,11 @@ contract, and from then on launches like any other subagent — with the same is
 legion-modules/
 ├── README.md                        ← you are here
 ├── README.es.md                     ← Spanish version
+├── _meta/                           # everything that isn't an installable module — branding, scaffolding
+│   ├── assets/                       # logos/wordmarks used by the READMEs
+│   └── template/                     # module.md skeleton to copy when starting a new module
 └── <module-name>/                   # one folder per module, independently installable
-    ├── module.md                     # manifest — see below (_template/ currently only ships this file)
+    ├── module.md                     # manifest — see below (_meta/template/ currently only ships this file)
     ├── .claude/                      # agents/, optionally skills/ — see "Creating a new module" (exact shape may evolve)
     │   └── ...
     └── ...                            # any other files the agent's own logic needs
@@ -247,8 +250,8 @@ author — the same role a native Legion implementer plays, but sourced from you
 
 ## Creating a new module
 
-**Start from [`_template/`](_template/)** — for now it ships only
-[`_template/module.md`](_template/module.md): a fully commented manifest skeleton with both
+**Start from [`_meta/template/`](_meta/template/)** — for now it ships only
+[`_meta/template/module.md`](_meta/template/module.md): a fully commented manifest skeleton with both
 `gate` and `generator` blocks inline, marked to delete whichever doesn't apply. Copy that file
 into your module's folder and edit it — you don't need to reconstruct the manifest shape from the
 reference below. The rest of a module's folder (`.claude/agents/`, optionally `.claude/skills/`)
@@ -256,7 +259,7 @@ you write from scratch, following the layout above.
 
 ```
 mkdir my-module
-cp _template/module.md my-module/module.md
+cp _meta/template/module.md my-module/module.md
 ```
 
 1. **Pick the type** — `gate` if the module should be able to verify (and possibly reject) a
@@ -264,7 +267,7 @@ cp _template/module.md my-module/module.md
    `implementer` if it should write code directly in a story's worktree, as its author (see
    [`type: implementer`](#type-implementer--a-module-that-writes-code) — real `Write`/`Edit`
    access over a whole worktree, only ever run when a story explicitly names it).
-2. **Create the folder** `<module-name>/` at the root of this repo (or copy `_template/module.md`
+2. **Create the folder** `<module-name>/` at the root of this repo (or copy `_meta/template/module.md`
    into it as shown above).
 3. **Write `module.md`** following the format above — every field required for the declared
    `type` (see [The `module.md` manifest](#the-modulemd-manifest)). Left-over `<...>`
@@ -293,7 +296,7 @@ cp _template/module.md my-module/module.md
 
 ## Autoconfig: installing straight from the template
 
-Not every dev picking up `_template/` knows Legion's manifest contract well enough to fill in
+Not every dev picking up `_meta/template/` knows Legion's manifest contract well enough to fill in
 every field by hand on the first try — that's expected, not a blocker. If you point `/new-module`
 at a module whose `module.md` still has unresolved `<...>` placeholders in required fields (or
 `type` itself is still `<gate|generator>`), Legion doesn't reject it outright as an incomplete

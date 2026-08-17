@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="assets/legion-modules-l-wordmark.png" alt="LEGION MODULES" width="360">
+  <img src="_meta/assets/legion-modules-l-wordmark.png" alt="LEGION MODULES" width="360">
 </p>
 
 <p align="center"><a href="README.md">English</a> · <strong>Español</strong></p>
 
 # Legion Modules — colección oficial de módulos para Legion
 
-<img src="assets/legion-modules-l-mark.png" alt="L" width="18" align="absmiddle"> **EGION MODULES**
+<img src="_meta/assets/legion-modules-l-mark.png" alt="L" width="18" align="absmiddle"> **EGION MODULES**
 es un **monorepo de módulos para [Legion](https://github.com/luk-s12/legion)**, el sistema de
 orquestación multiagente dinámico. Un **módulo** es un proyecto de Claude Code autocontenido — un
 agente, opcionalmente con skills — que se conecta a una orquestación de Legion para verificar una
@@ -60,8 +60,11 @@ aislamiento que un `worktree-agent`:
 legion-modules/
 ├── README.md                        ← versión en inglés
 ├── README.es.md                     ← estás acá
+├── _meta/                           # todo lo que no es un módulo instalable — branding, scaffolding
+│   ├── assets/                       # logos/wordmarks usados por los READMEs
+│   └── template/                     # esqueleto de module.md para copiar al arrancar un módulo nuevo
 └── <module-name>/                   # una carpeta por módulo, instalable por separado
-    ├── module.md                     # manifiesto — ver abajo (_template/ por ahora solo trae este archivo)
+    ├── module.md                     # manifiesto — ver abajo (_meta/template/ por ahora solo trae este archivo)
     ├── .claude/                      # agents/, opcionalmente skills/ — ver "Crear un módulo nuevo" (forma exacta puede cambiar)
     │   └── ...
     └── ...                            # cualquier otro archivo que la lógica del agente necesite
@@ -255,8 +258,8 @@ con origen en tu clone.
 
 ## Crear un módulo nuevo
 
-**Arrancá desde [`_template/`](_template/)** — por ahora trae solo
-[`_template/module.md`](_template/module.md): un esqueleto de manifiesto completamente comentado,
+**Arrancá desde [`_meta/template/`](_meta/template/)** — por ahora trae solo
+[`_meta/template/module.md`](_meta/template/module.md): un esqueleto de manifiesto completamente comentado,
 con los bloques de `gate` y de `generator` incluidos y marcados para borrar el que no
 corresponda. Copiá ese archivo a la carpeta de tu módulo y editalo — no hace falta que
 reconstruyas la forma del manifiesto a partir de la referencia de abajo. El resto de la carpeta
@@ -265,7 +268,7 @@ la estructura de arriba.
 
 ```
 mkdir mi-modulo
-cp _template/module.md mi-modulo/module.md
+cp _meta/template/module.md mi-modulo/module.md
 ```
 
 1. **Elegí el tipo** — `gate` si el módulo tiene que poder verificar (y eventualmente rechazar)
@@ -274,7 +277,7 @@ cp _template/module.md mi-modulo/module.md
    autor (ver [`type: implementer`](#type-implementer--un-módulo-que-escribe-código) — acceso
    real de `Write`/`Edit` sobre un worktree entero, solo corre cuando una historia lo nombra
    explícito).
-2. **Creá la carpeta** `<module-name>/` en la raíz de este repo (o copiá `_template/module.md`
+2. **Creá la carpeta** `<module-name>/` en la raíz de este repo (o copiá `_meta/template/module.md`
    ahí adentro como se muestra arriba).
 3. **Escribí `module.md`** siguiendo el formato de arriba — todos los campos obligatorios para el
    `type` declarado (ver [El manifiesto `module.md`](#el-manifiesto-modulemd)). No hace falta
@@ -304,7 +307,7 @@ cp _template/module.md mi-modulo/module.md
 
 ## Autoconfig: instalar directo desde el template
 
-No todo dev que agarra `_template/` conoce el contrato del manifiesto de Legion lo suficiente
+No todo dev que agarra `_meta/template/` conoce el contrato del manifiesto de Legion lo suficiente
 como para completar cada campo a mano al primer intento — es esperable, no un bloqueo. Si
 apuntás `/new-module` a un módulo cuyo `module.md` todavía tiene placeholders `<...>` sin
 resolver en campos obligatorios (o el propio `type` sigue siendo `<gate|generator>`), Legion no
