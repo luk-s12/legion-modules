@@ -19,6 +19,26 @@ Each module lives in its **own top-level folder** in this repo (e.g. `dummy-e2e/
 `api-collections/`) — independent from the others, individually installable. There is no shared
 runtime between modules: installing one never requires installing another.
 
+```mermaid
+flowchart TB
+    L["LEGION<br/>Main orchestrator"]
+    M["LEGION MODULES<br/>Module collection"]
+    L --> M
+    M --> G["gate<br/>Verifies a story"]
+    M --> N["generator<br/>Generates artifacts"]
+    M --> I["implementer<br/>Implements a subtask"]
+    G --> GA["Module agent"]
+    N --> NA["Module agent"]
+    I --> IA["Module agent"]
+    GA --> GS["Optional skills and rules"]
+    NA --> NS["Internal skills<br/>progressive loading"]
+    IA --> IS["Optional skills and rules"]
+```
+
+The hierarchy preserves the Roman idea: **Legion** coordinates the complete force; each module
+is a self-contained unit with its own agent and, when needed, specialized skills loaded
+progressively.
+
 ## Table of contents
 
 - [What a module is (and isn't)](#what-a-module-is-and-isnt)

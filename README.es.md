@@ -20,6 +20,26 @@ Cada módulo vive en su **propia carpeta de primer nivel** dentro de este repo (
 `api-collections/`) — independiente de las demás, instalable por separado. No hay runtime
 compartido entre módulos: instalar uno nunca requiere instalar otro.
 
+```mermaid
+flowchart TB
+    L["LEGION<br/>Orquestador principal"]
+    M["LEGION MODULES<br/>Colección de módulos"]
+    L --> M
+    M --> G["gate<br/>Verifica una story"]
+    M --> N["generator<br/>Genera artefactos"]
+    M --> I["implementer<br/>Implementa una subtask"]
+    G --> GA["Agente del módulo"]
+    N --> NA["Agente del módulo"]
+    I --> IA["Agente del módulo"]
+    GA --> GS["Skills y rules opcionales"]
+    NA --> NS["Skills internas<br/>carga progresiva"]
+    IA --> IS["Skills y rules opcionales"]
+```
+
+La jerarquía conserva la idea romana: **Legion** coordina la fuerza completa; cada módulo es una
+unidad autocontenida con su propio agente y, cuando lo necesita, skills especializadas que se
+cargan de manera progresiva.
+
 ## Índice
 
 - [Qué es un módulo (y qué no es)](#qué-es-un-módulo-y-qué-no-es)
