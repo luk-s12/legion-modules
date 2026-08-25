@@ -4,7 +4,43 @@ A Legion `type: gate` module that uses [CodeGraph](https://github.com/colbymchen
 (`@colbymchenry/codegraph` on npm) for structural code discovery. This directory is self-contained
 because Legion installs only the module's subfolder.
 
-## Prerequisite
+## Requirements for full use
+
+- Install and register the module in Legion. Activate it with the exact installed name shown by the
+  installation summary or `modules/registry.md`; do not assume it is `code-intelligence`. A
+  collection install may register it as `legion-modules_code-intelligence`.
+- Run it through Legion in Claude Code.
+- Make Node.js and npm available on `PATH`. Automatic installation additionally requires npm
+  registry/network access and permission to write to npm's global installation location.
+- Either install exactly CodeGraph `1.5.0` beforehand or accept the negotiated
+  `allow-codegraph-install` rule. A different installed version is not replaced automatically.
+- Ensure `.codegraph/` is already ignored by the target repository before activation. Add this to
+  the repository's `.gitignore` through the project's normal review process:
+
+  ```gitignore
+  .codegraph/
+  ```
+
+  Verify it from the repository root:
+
+  ```text
+  git check-ignore -q -- .codegraph/
+  ```
+
+- Activate the installed module in each story that should use it, replacing the placeholder with
+  the exact registered name:
+
+  ```markdown
+  ## Modules
+  - <installed-name>
+  ```
+
+When a prerequisite is absent, the module remains non-blocking and falls back to conventional,
+bounded code discovery; CodeGraph-backed impact and affected-test evidence will be unavailable.
+See [configuration](docs/configuration.md), [architecture](docs/architecture.md), and
+[troubleshooting](docs/troubleshooting.md) for the detailed contracts and diagnostics.
+
+## CodeGraph installation behavior
 
 CodeGraph is **never installed silently**. This module publishes the `allow-codegraph-install` rule
 through Legion's native `provides_rules` contract. The first time a project activates the module,
@@ -23,8 +59,8 @@ If npm is unavailable, times out, or fails its version preflight, the module rec
 `npm_unavailable` and does not attempt installation. `installation_failed` is reserved for a pinned
 install attempted after a successful npm preflight that then fails.
 
-Revisit the decision with
-`/module renegotiate code-intelligence allow-codegraph-install`. To install it manually:
+Revisit the decision with the exact registered name established above:
+`/module renegotiate <installed-name> allow-codegraph-install`. To install it manually:
 
 ```text
 npm install -g @colbymchenry/codegraph@1.5.0
@@ -64,11 +100,6 @@ CodeGraph runs locally; this module never sends source code to an external servi
 collects anonymous usage telemetry without code, paths, or names unless it is disabled with
 `codegraph telemetry off`. The module does not change telemetry settings; that decision belongs to
 the installing project.
-
-## Tested platforms
-
-Only **Windows** has been tested, using synthetic TypeScript and basic Java repositories.
-Linux/macOS and a real Spring Boot repository remain unverified and are not supported by this MVP.
 
 ## Known MVP limitations
 
