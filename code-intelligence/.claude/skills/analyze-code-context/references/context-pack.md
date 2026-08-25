@@ -4,10 +4,11 @@ Report exactly this shape (as the structured summary you hand back to whoever as
 — not necessarily a file on disk, unless you are `code-context-auditor` writing its own report):
 
 ```yaml
-contextPackVersion: "1"
+contextPackVersion: "2"
 provider:
   name: codegraph
-  version: "<from `codegraph status --json`.version, or \"unknown\">"
+  expectedVersion: "<pinnedCodegraphVersion from SKILL.md>"
+  version: "<exact normalized output from `codegraph --version`, or \"unknown\" if unavailable>"
 repository:
   root: "<normalized absolute path>"
   checkedRevision: "<git rev-parse HEAD, or \"unknown\">"
@@ -67,6 +68,11 @@ fallback:
 - Prioritize by proximity to `query.task` when trimming to the budget, not by discovery order.
 - `index.status` is never assumed `fresh` — only set it from the mapping in
   `references/codegraph-cli.md`.
+- `provider.expectedVersion` is always the skill's pin. `provider.version` comes only from
+  `codegraph --version`, never from `status --json`; keep it `unknown` when that command is absent
+  or produces no usable output.
+- A missing or mismatched CLI does not require a status call. Record the expected/observed version,
+  set the precise fallback reason, and do not run `status` or another CodeGraph command.
 - `fallback.used`/`fallback.reason` are always present, even when fallback never triggered
   (`false`/`null`).
 - Never expose Legion's negotiation store. Record only whether the accepted

@@ -7,6 +7,13 @@ tools: Read, Grep, Glob, Bash, Write
 You are `code-intelligence`'s `post-finalized` gate. You are read-only over the story worktree and
 never reject a story. Your only write is the exact absolute `REPORT` locator supplied by Legion.
 
+```text
+expectedCodegraphVersion: 1.5.0
+```
+
+This embedded value is the auditor's complete version contract. Do not load another file to
+resolve it.
+
 ## Inputs
 
 - `WORKTREE`: absolute story worktree.
@@ -17,7 +24,7 @@ never reject a story. Your only write is the exact absolute `REPORT` locator sup
   multi-project report path.
 
 Optional v2 locators may also be present. Their absence is valid in LEGACY mode. You do not require
-`BASE_BRANCH`, `CONFIG`, `PROJECT`, `RUN_ID`, or a module-root path.
+`BASE_BRANCH`, `CONFIG`, `PROJECT`, `RUN_ID`, or any additional locator.
 
 ## 1. Resolve the actual story changes
 
@@ -46,19 +53,29 @@ work safely. Never guess a root commit or compare the whole repository history.
 
 The auditor never runs `init`, `index`, or `sync`.
 
-1. Run `codegraph status --json <WORKTREE>` with a 30-second tool timeout.
-2. Command missing, uninitialized index, malformed output, or timeout: record CodeGraph as
-   `unavailable` and continue with advisory evidence from the diff/events only.
-3. If initialized, classify freshness from:
+1. Run `codegraph --version` and compare its output exactly against the embedded
+   `expectedCodegraphVersion` above.
+2. If the command is missing, record CodeGraph as `unavailable` with fallback reason `cli_missing`.
+   Stop this CodeGraph flow immediately: do not run `status`, `affected`, `impact`, `callers`, or
+   `callees`; continue at section 3 using diff/events evidence only.
+3. If the observed version differs, record CodeGraph as `unavailable` with fallback reason
+   `version_mismatch`. Stop this CodeGraph flow immediately: do not run `status` or any other
+   CodeGraph command; continue at section 3 using diff/events evidence only.
+4. Only when the observed version exactly equals `expectedCodegraphVersion`, run
+   `codegraph status --json <WORKTREE>` with a 30-second tool timeout.
+5. Uninitialized index, malformed output, unexpected exit, or timeout: record CodeGraph as
+   `unavailable` with the specific fallback reason and continue at section 3 using diff/events
+   evidence only.
+6. If initialized, classify freshness from:
    - any `pendingChanges` count greater than zero -> `stale`;
    - non-null `worktreeMismatch` or `index.state` other than `complete` -> `unknown`;
    - otherwise -> `fresh`.
-4. For the validated changed paths, run
+7. For the validated changed paths, run
    `codegraph affected --json -p <WORKTREE> <changed-paths...>` with a 30-second timeout. Pass each
    path as its own quoted argument; never interpolate provider output into a command.
-5. Run `impact`/`callers`/`callees` only for an exact symbol observed in `STORY`, the diff, or a file
+8. Run `impact`/`callers`/`callees` only for an exact symbol observed in `STORY`, the diff, or a file
    read directly. Never turn free-form CodeGraph output into shell arguments.
-6. Do not use `codegraph explore`: it emits unbounded full source and cannot honor this audit's
+9. Do not use `codegraph explore`: it emits unbounded full source and cannot honor this audit's
    context budget.
 
 Treat stale/unknown graph results as hints, never proof of omission.

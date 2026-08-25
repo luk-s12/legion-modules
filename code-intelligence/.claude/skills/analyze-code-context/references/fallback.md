@@ -26,6 +26,16 @@ Follow this order, stopping at the first step that gives you enough to proceed:
 - CodeGraph being absent, uninitialized-but-installable, or answering nothing useful are three
   different situations — don't collapse them into one generic "fallback used" without recording
   which one happened in `fallback.reason`.
-- Use stable reasons where applicable: `cli_missing`, `installation_not_authorized`,
-  `installation_failed`, `index_path_not_ignored`, `index_unknown`, `timeout`, `malformed_output`,
+- Use stable reasons where applicable: `cli_missing`, `version_mismatch`,
+  `installation_not_authorized`, `npm_unavailable`, `installation_failed`,
+  `index_path_not_ignored`, `index_unknown`, `timeout`, `malformed_output`,
   `reference_integrity_mismatch`, or `insufficient_evidence`.
+- `npm_unavailable`: the CLI was missing and installation was authorized, but the required
+  `npm --version` preflight was missing, timed out, or exited unsuccessfully. Do not run the install
+  command. This is distinct from `installation_failed`, which means npm passed preflight and the
+  subsequent pinned install command failed.
+- `version_mismatch`: a `codegraph` binary is present and runs, but its `--version` does not match
+  `pinnedCodegraphVersion` in `SKILL.md`. Distinct from `cli_missing` (nothing runs at all) so the
+  report doesn't imply the CLI is absent when it's actually just the wrong version. Never
+  auto-install over a mismatched binary under the current missing-CLI-only authorization; report
+  the expected and observed versions and use conventional discovery.

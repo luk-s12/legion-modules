@@ -10,8 +10,18 @@ CodeGraph is **never installed silently**. This module publishes the `allow-code
 through Legion's native `provides_rules` contract. The first time a project activates the module,
 Legion negotiates the rule and persists the verdict for that project:
 
-- if accepted and the CLI is missing, the skill may install and verify only the pinned version;
+- if accepted and the CLI is missing, the skill first requires a successful `npm --version`
+  preflight, then may install and verify only the pinned version;
 - if rejected, it uses conventional fallback without installing or asking again on every run.
+
+If a different CodeGraph version is already present, the module does not replace, upgrade, or
+downgrade it automatically, even when the missing-CLI installation rule was accepted. It reports
+`version_mismatch` and uses conventional discovery. The project owner must resolve the global
+installation manually, or explicitly expand and renegotiate authorization before a future run.
+
+If npm is unavailable, times out, or fails its version preflight, the module records
+`npm_unavailable` and does not attempt installation. `installation_failed` is reserved for a pinned
+install attempted after a successful npm preflight that then fails.
 
 Revisit the decision with
 `/module renegotiate code-intelligence allow-codegraph-install`. To install it manually:
