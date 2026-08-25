@@ -13,10 +13,10 @@ are part of this file so Legion's source fingerprint changes when operational re
 
 ```text
 referenceBundleVersion: 1
-codegraph-cli.md.sha256: 4ace2d241bb8910549ca01b3bbc38e5b8375a8dd83064a6b48a2df6100a25692
+codegraph-cli.md.sha256: a0f236562fccef2f40955f9ebc7922352fde3f4574ad3e085bdda02499b9b776
 context-pack.md.sha256: 92e8c119f403c295e75f396d5f60df95c3359adaf1c830156746da06d712d7e1
 fallback.md.sha256: 27167fa57190a36293ca515dace805fbacb35a6cae395b132986ad381165573d
-onboarding.md.sha256: ad01fd17e83d528252d2cdcea1663c3840d5954449082569b057f7d3b462ceec
+onboarding.md.sha256: 8320f9873946313b5efae8de8a05c45ec95c69ba9dbf8423b11b37c8d3bd936b
 ```
 
 Before reading any supporting reference, compute its SHA-256 from the absolute `MODULE_SKILLS`
@@ -34,7 +34,7 @@ cross-layer bugs, refactors, blast radius, and test selection.
 
 ## 2. Health check
 
-Run `codegraph status --json -p <repository-root>` with a 30-second tool timeout. Pass the normalized
+Run `codegraph status --json <repository-root>` with a 30-second tool timeout. Pass the normalized
 repository root as one quoted argument and verify it is the worktree/repository you were assigned.
 
 - `initialized: true` -> freshness check.
@@ -77,7 +77,7 @@ Never edit `.gitignore`, `.git/info/exclude`, or Git configuration yourself. Cap
 stop using CodeGraph, report them, and do not delete or hide them.
 
 If the guarded path is ignored and health reported `initialized: false`, run
-`codegraph init -p <repository-root>` once with a 120-second timeout, then repeat status.
+`codegraph init <repository-root>` once with a 120-second timeout, then repeat status.
 
 ## 5. Freshness
 
@@ -87,7 +87,7 @@ From `status --json`:
 - non-null `worktreeMismatch` or `index.state` other than `complete` -> `unknown`;
 - otherwise -> `fresh`.
 
-For `stale`, run guarded `codegraph sync -p <repository-root>` once and re-check. For `unknown`, do
+For `stale`, run guarded `codegraph sync <repository-root>` once and re-check. For `unknown`, do
 not mutate further; use graph results only as warned hints or fall back. Never infer freshness from
 timestamps or `git log`.
 

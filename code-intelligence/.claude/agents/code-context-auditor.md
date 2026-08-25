@@ -46,7 +46,7 @@ work safely. Never guess a root commit or compare the whole repository history.
 
 The auditor never runs `init`, `index`, or `sync`.
 
-1. Run `codegraph status --json -p <WORKTREE>` with a 30-second tool timeout.
+1. Run `codegraph status --json <WORKTREE>` with a 30-second tool timeout.
 2. Command missing, uninitialized index, malformed output, or timeout: record CodeGraph as
    `unavailable` and continue with advisory evidence from the diff/events only.
 3. If initialized, classify freshness from:

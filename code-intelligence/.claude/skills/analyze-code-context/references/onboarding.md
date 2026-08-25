@@ -24,7 +24,7 @@ Run exactly:
 npm install --global --save-exact @colbymchenry/codegraph@1.5.0
 ```
 
-Then run `codegraph --version` and `codegraph status --json -p <repository-root>`. If either fails,
+Then run `codegraph --version` and `codegraph status --json <repository-root>`. If either fails,
 fall back with `installation_failed`; never retry again in the same run.
 
 This MVP deliberately does not offer `npx` as an installation choice: a one-off package execution

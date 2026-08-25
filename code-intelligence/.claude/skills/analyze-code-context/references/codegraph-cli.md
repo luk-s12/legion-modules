@@ -6,9 +6,9 @@ This is the self-contained operational contract used by the installed module.
 
 | Command | Has `--json`/`-j` | Path argument | Notes |
 |---|---|---|---|
-| `status [-j] [-p path]` | yes | `-p` or `cwd` | Safe on an uninitialized dir: `exit 0`, `{"initialized": false, ...}` |
-| `init [-p path]` | no | `-p` or positional | Idempotent-ish: re-running rebuilds, use only when `initialized: false` |
-| `sync [-p path]` | no | `-p` or positional | Only when `status` reports pending changes |
+| `status [-j] [path]` | yes | positional or `cwd` | Safe on an uninitialized dir: `exit 0`, `{"initialized": false, ...}` |
+| `init [path]` | no | positional only | Idempotent-ish: re-running rebuilds, use only when `initialized: false` |
+| `sync [path]` | no | positional only | Only when `status` reports pending changes |
 | `impact <symbol> [-j] [-p path] [-d depth]` | yes | `-p`, never positional alongside `<symbol>` | `exit 1` + stderr if not initialized |
 | `callers <symbol> [-j] [-p path]` | yes | same rule | |
 | `callees <symbol> [-j] [-p path]` | yes | same rule | |
