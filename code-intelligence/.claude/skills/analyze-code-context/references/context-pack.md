@@ -51,6 +51,12 @@ warnings: []
 fallback:
   used: false
   reason: null
+usage:
+  graphQueries: 0
+  graphCandidateFiles: 0
+  syncAttempted: false
+  syncSucceeded: false
+  fallbackReason: null
 ```
 
 ## Rules
@@ -79,3 +85,10 @@ fallback:
   `allow-codegraph-install` rule was supplied for this story.
 - If the CLI is missing and the accepted rule is absent, use `installRule: not_accepted` and
   fallback reason `installation_not_authorized`; never claim why the rule is absent.
+- `usage` counters are observed, not estimated: increment `graphQueries` once per structural
+  command actually executed (`impact`/`callers`/`callees`/`affected`), set `graphCandidateFiles` to
+  the count of distinct files that ended up in `files.likelyToModify`/`files.supportingContext`
+  derived from graph evidence, and set `syncAttempted`/`syncSucceeded` only when this run actually
+  attempted a `sync` (never infer them from freshness alone). `fallbackReason` mirrors
+  `fallback.reason` when `fallback.used` is true, otherwise stays `null`. Do not report token counts,
+  durations, or `Read` calls here — v2 cannot observe those reliably.

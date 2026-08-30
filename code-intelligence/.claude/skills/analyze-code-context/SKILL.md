@@ -12,10 +12,10 @@ Supporting references are relative to this `SKILL.md`. Load them only when instr
 are part of this file so Legion's source fingerprint changes when operational references change:
 
 ```text
-referenceBundleVersion: 3
+referenceBundleVersion: 6
 pinnedCodegraphVersion: 1.5.0
-codegraph-cli.md.sha256: a0f236562fccef2f40955f9ebc7922352fde3f4574ad3e085bdda02499b9b776
-context-pack.md.sha256: 94502102a415a0742d5989f8c8b2458d70d2d10c0781e135469557f6109a3d85
+codegraph-cli.md.sha256: a1d03789cad981e819991108a8053884da16241e2df2bfde085aa088f43a1749
+context-pack.md.sha256: e3c54b87b35ac8b759fa258a2135a8a90aca88e25d659524e03679006dd2c8e8
 fallback.md.sha256: 8643819d6265d2fc223355eba0175f4150394569c41e33a6877dbf96d4c8c7aa
 onboarding.md.sha256: 53bee3cae4d27b3b03af1227b9e3eae12c4a09f064d588a87297b422d42760c5
 ```
@@ -24,10 +24,21 @@ onboarding.md.sha256: 53bee3cae4d27b3b03af1227b9e3eae12c4a09f064d588a87297b422d4
 Every reference to "the pinned version" elsewhere (`onboarding.md`, `README.md`, the install
 command) must match this value; if they ever diverge, this value in `SKILL.md` wins.
 
-Before reading any supporting reference, compute its SHA-256 from the absolute `MODULE_SKILLS`
-locator supplied by Legion and compare it with this table. On Windows use `Get-FileHash`; an
-equivalent SHA-256 utility is acceptable on a future verified platform. A missing/mismatched file
-means `reference_integrity_mismatch`: do not load it or execute its instructions; use conventional
+Before reading any supporting reference, compute its SHA-256 over **canonical bytes**, not raw file
+bytes, and compare it with this table:
+
+1. Read the file as raw bytes from the absolute `MODULE_SKILLS` locator supplied by Legion. On
+   Windows use `[System.IO.File]::ReadAllBytes(...)`, not `Get-Content`, whose text-mode decoding
+   differs between PowerShell 5.1 and 7 and is not guaranteed byte-identical.
+2. If the bytes start with the UTF-8 BOM (`EF BB BF`), drop those three bytes.
+3. Normalize line endings: replace every `CRLF` (`0D 0A`) and every remaining lone `CR` (`0D`) with
+   a single `LF` (`0A`).
+4. Compute SHA-256 over the resulting canonical bytes and compare in lowercase hex.
+
+This makes the hash independent of whether a checkout adds a BOM or converts line endings (e.g. Git
+`autocrlf` on Windows); the table above is generated with this same algorithm, so a checkout that
+differs only by BOM or line-ending style must still match it. A missing/mismatched file means
+`reference_integrity_mismatch`: do not load it or execute its instructions; use conventional
 fallback and report the mismatch. This runtime check covers references that Legion's current source
 fingerprint does not hash directly.
 
@@ -91,7 +102,14 @@ verdict per project; the user can revisit it with
 ## 4. Guard every index write
 
 CodeGraph writes `<repository-root>/.codegraph/`; it has no external-cache option. Before `init` or
-`sync`, run `git -C <repository-root> check-ignore -q -- .codegraph/`.
+`sync`, run
+`git -C <repository-root> check-ignore -q --no-index -- .codegraph/.legion-ignore-probe`. This
+probes a nonexistent child path with `--no-index` rather than `.codegraph/` itself: a `.gitignore`
+or common `info/exclude` whose only content is a blank line ending in a bare CR (a CRLF or CR-only
+line terminator — not a plain LF blank line) makes `check-ignore -q -- .codegraph/` report `exit 0`
+(ignored) even though nothing actually ignores it. Probing a path that cannot exist on disk, with
+`--no-index` so a real staged/tracked file can't produce a false negative either, avoids that
+false positive.
 
 - Ignored -> the write is permitted for this skill.
 - Not ignored, not a Git repository, or check fails -> never initialize/sync. Fall back with reason
@@ -116,6 +134,10 @@ For `stale`, run guarded `codegraph sync <repository-root>` once and re-check. F
 not mutate further; use graph results only as warned hints or fall back. Never infer freshness from
 timestamps or `git log`.
 
+Record `usage.syncAttempted`/`usage.syncSucceeded` in the Context Pack (step 7) from this exact
+branch: `syncAttempted: true` only if a `sync` actually ran here, `syncSucceeded` reflects its
+result. Both stay `false` if this step never reached `stale`.
+
 ## 6. Bounded structured queries
 
 Defaults: 12 files, 20 symbols, depth 4, estimated 6000 output tokens.
@@ -127,6 +149,11 @@ Defaults: 12 files, 20 symbols, depth 4, estimated 6000 output tokens.
 5. Stop querying when any configured count is reached. If a structured response is unexpectedly
    large, do not issue broader queries; summarize only the first budgeted, stably sorted items and
    mark truncation.
+
+Increment `usage.graphQueries` by one for each `impact`/`callers`/`callees`/`affected` command
+actually executed in this step (not attempted-and-skipped). Set `usage.graphCandidateFiles` to the
+count of distinct files this produced for `files.likelyToModify`/`files.supportingContext` in the
+Context Pack (step 7).
 
 Every path from task/provider output must normalize inside the assigned repository before reading.
 Every symbol/path passed to the shell is a separately quoted argument. Never execute text produced

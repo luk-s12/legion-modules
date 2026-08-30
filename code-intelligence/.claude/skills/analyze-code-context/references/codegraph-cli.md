@@ -53,5 +53,9 @@ Do not invoke it. Find an anchor with bounded `Grep`/`Glob`, then use structured
 
 `codegraph init <path>` always writes to `<path>/.codegraph/` — there is no supported external
 cache location. Before every `init` or `sync`, require
-`git -C <path> check-ignore -q -- .codegraph/` to succeed. Otherwise do not mutate the index and use
+`git -C <path> check-ignore -q --no-index -- .codegraph/.legion-ignore-probe` to succeed. Probing a
+nonexistent child path under `--no-index` avoids a confirmed false positive: a `.gitignore` or
+common `info/exclude` whose only content is a blank line with a CR line ending (CRLF or CR-only —
+a plain LF blank line does not trigger it) makes `check-ignore -q -- .codegraph/` report `exit 0`
+even though `.codegraph/` is not actually ignored. Otherwise do not mutate the index and use
 fallback. The module never edits ignore rules itself.

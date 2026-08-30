@@ -104,7 +104,20 @@ warnings: []
 fallback:
   used: false
   reason: null
+usage:
+  graphQueries: 0
+  graphCandidateFiles: 0
+  syncAttempted: false
+  syncSucceeded: false
+  fallbackReason: null
 ```
+
+`usage.graphQueries` counts each `affected`/`impact`/`callers`/`callees` command actually executed in
+section 2, not attempted-and-skipped. `usage.graphCandidateFiles` counts distinct files the graph
+evidence contributed to `possibleOmissions`/`suggestedTestsNotRun`. This auditor never runs `sync`
+(section 2 already forbids `init`/`index`/`sync`), so `usage.syncAttempted`/`usage.syncSucceeded`
+always stay `false`. `usage.fallbackReason` mirrors `fallback.reason` when `fallback.used` is true,
+otherwise stays `null`.
 
 Every possible omission includes the exact CodeGraph command/field that suggested it and states
 that it is advisory. If CodeGraph is unavailable or insufficient, set `fallback.used: true` with a

@@ -21,10 +21,12 @@ because Legion installs only the module's subfolder.
   .codegraph/
   ```
 
-  Verify it from the repository root:
+  Verify it from the repository root, probing a nonexistent child path with `--no-index` (a
+  `.gitignore`/`info/exclude` containing only a CR-terminated blank line otherwise makes
+  `check-ignore -q -- .codegraph/` itself falsely report the directory as ignored):
 
   ```text
-  git check-ignore -q -- .codegraph/
+  git check-ignore -q --no-index -- .codegraph/.legion-ignore-probe
   ```
 
 - Activate the installed module in each story that should use it, replacing the placeholder with
