@@ -1,6 +1,5 @@
 ---
 type: gate
-legion_contract: 2
 
 valid_stages:
   - post-finalized

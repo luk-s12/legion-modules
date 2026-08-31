@@ -96,6 +96,17 @@ read anything accessible to it, not only the files the module intends to use. Th
 risk, not a boundary enforced by a technical sandbox, and follows the same trust model as other
 modules in this repository.
 
+## `REPORT` write permission
+
+`writes_to: ""` is correct: this module never writes inside the story `WORKTREE`
+(`code-context-auditor.md` states it explicitly — never write to `WORKTREE`). `Write` is still
+declared in `tools` because the auditor writes its advisory finding to the opaque `REPORT` locator
+Legion supplies, which lives outside the worktree by design. `/new-module`'s generic
+`writes_to`/`tools` consistency check does not distinguish this case — it flags any non-empty
+`Write` against an empty `writes_to` as a risk item — so installing this module will still show that
+finding in the preview. This section explains why the finding does not indicate a real
+inconsistency; it does not remove or silence it.
+
 ## Privacy
 
 CodeGraph runs locally; this module never sends source code to an external service. CodeGraph

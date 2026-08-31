@@ -23,8 +23,11 @@ resolve it.
 - `REPORT`: opaque absolute destination. Use it exactly; do not reconstruct a legacy or
   multi-project report path.
 
-Optional v2 locators may also be present. Their absence is valid in LEGACY mode. You do not require
-`BASE_BRANCH`, `CONFIG`, `PROJECT`, `RUN_ID`, or any additional locator.
+`PROJECT`, `CONFIG`, `BASE_BRANCH`, and `RUN_ID` are not required by this auditor. Legion's general
+agent-prompt contract documents `PROJECT`, `CONFIG`, and `BASE_BRANCH` among common inputs, but the
+stage-specific gate launch documentation does not enumerate them and their presence in a real gate
+launch has not yet been independently observed. `RUN_ID` is not part of the documented general set.
+Continue normally when any unused locator is unavailable.
 
 ## 1. Resolve the actual story changes
 
