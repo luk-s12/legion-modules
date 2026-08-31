@@ -40,6 +40,7 @@ flowchart TB
 | Módulo | Tipo | Qué entrega |
 |---|---|---|
 | [`api-collections`](api-collections/module.md) | `generator` | Genera OpenAPI y colecciones para Postman o Insomnia mediante análisis estático, sin ejecutar ni modificar el proyecto. |
+| [`code-intelligence`](code-intelligence/module.md) | `gate` | Ayuda a comprender código existente antes de modificarlo: identifica archivos, símbolos, dependencias y tests posiblemente afectados con CodeGraph, limita el contexto innecesario y verifica el impacto al finalizar. Si CodeGraph no está autorizado o disponible, continúa con búsqueda convencional. |
 
 Cada módulo vive en su propia carpeta, se instala por separado y no depende de los demás.
 
